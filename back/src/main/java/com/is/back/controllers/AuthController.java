@@ -25,7 +25,7 @@ public class AuthController {
      * @param loginRequest Запрос на вход (логин и пароль).
      * @return JWT-токен.
      */
-    @PostMapping("/signIn")
+    @PostMapping("/login")
     public ResponseEntity<String> signIn(@RequestBody UserLoginDTO loginRequest) {
         String token = authService.signIn(loginRequest);
         return ResponseEntity.ok(token);
@@ -37,7 +37,7 @@ public class AuthController {
      * @param registrationDTO Данные для регистрации (логин, пароль, роль).
      * @return Сообщение об успешной регистрации.
      */
-    @PostMapping("/signUp")
+    @PostMapping("/register")
     public ResponseEntity<String> signUp(@RequestBody UserRegistrationDTO registrationDTO) {
         try {
             String message = authService.signUp(registrationDTO);
