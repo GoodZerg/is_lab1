@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 @Data
 
 public class HumanDTO {
+    private Long id;
+
     private Double height;
 
 }

@@ -1,6 +1,9 @@
 package com.is.back.controllers;
 
 import com.is.back.dto.CityDTO;
+import com.is.back.dto.CoordinatesDTO;
+import com.is.back.dto.HumanDTO;
+import com.is.back.dto.MessageDTO;
 import com.is.back.services.CityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,15 +30,27 @@ public class CityController {
         return ResponseEntity.ok(cities);
     }
 
+    @GetMapping("/coordinates")
+    public ResponseEntity<List<CoordinatesDTO>> getAllCoordinates() {
+        List<CoordinatesDTO> coordinates = cityService.getAllCoordinates();
+        return ResponseEntity.ok(coordinates);
+    }
+
+    @GetMapping("/governors")
+    public ResponseEntity<List<HumanDTO>> getAllGovernors() {
+        List<HumanDTO> governors = cityService.getAllHumans();
+        return ResponseEntity.ok(governors);
+    }
+
     /**
      * Получить город по ID.
      *
-     * @param id ID города.
+     * @param dto ID города.
      * @return Город.
      */
-    @GetMapping("/{id}")
-    public ResponseEntity<CityDTO> getCityById(@PathVariable Long id) {
-        CityDTO city = cityService.getCityById(id);
+    @PostMapping("/get")
+    public ResponseEntity<CityDTO> getCityById(@RequestBody MessageDTO dto) {
+        CityDTO city = cityService.getCityById(Long.valueOf(dto.getMessage()));
         return ResponseEntity.ok(city);
     }
 
@@ -54,25 +69,24 @@ public class CityController {
     /**
      * Обновить город.
      *
-     * @param id      ID города.
      * @param cityDTO Обновленные данные города.
      * @return Обновленный город.
      */
-    @PostMapping("/{id}/update")
-    public ResponseEntity<CityDTO> updateCity(@PathVariable Long id, @RequestBody CityDTO cityDTO) {
-        CityDTO updatedCity = cityService.updateCity(id, cityDTO);
+    @PostMapping("/update")
+    public ResponseEntity<CityDTO> updateCity(@RequestBody CityDTO cityDTO) {
+        CityDTO updatedCity = cityService.updateCity(cityDTO.getId(), cityDTO);
         return ResponseEntity.ok(updatedCity);
     }
 
     /**
      * Удалить город.
      *
-     * @param id ID города.
+     * @param dto ID города.
      * @return Сообщение об успешном удалении.
      */
-    @PostMapping("/{id}/delete")
-    public ResponseEntity<String> deleteCity(@PathVariable Long id) {
-        cityService.deleteCity(id);
-        return ResponseEntity.ok("City deleted successfully");
+    @PostMapping("/delete")
+    public ResponseEntity<MessageDTO> deleteCity(@RequestBody MessageDTO dto) {
+        cityService.deleteCity(Long.valueOf(dto.getMessage()));
+        return ResponseEntity.ok(new MessageDTO("City deleted successfully"));
     }
 }

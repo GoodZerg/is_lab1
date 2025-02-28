@@ -3,6 +3,7 @@ package com.is.back.controllers;
 
 import com.is.back.dto.AverageMetersAboveSeaLevelDTO;
 import com.is.back.dto.CityDTO;
+import com.is.back.dto.MessageDTO;
 import com.is.back.dto.RelocatePopulationDTO;
 import com.is.back.services.SpecialOperationsService;
 import lombok.RequiredArgsConstructor;
@@ -59,10 +60,10 @@ public class SpecialOperationsController {
      * @param sourceCityId ID исходного города.
      * @return Сообщение об успешном выполнении.
      */
-    @PostMapping("/relocate-all-population")
-    public ResponseEntity<String> relocateAllPopulation(@RequestParam Long sourceCityId) {
+    @GetMapping("/relocate-all-population")
+    public ResponseEntity<MessageDTO> relocateAllPopulation(@RequestParam Long sourceCityId) {
         String message = specialOperationsService.relocateAllPopulation(sourceCityId);
-        return ResponseEntity.ok(message);
+        return ResponseEntity.ok(new MessageDTO(message));
     }
 
     /**
@@ -70,9 +71,9 @@ public class SpecialOperationsController {
      *
      * @return Сообщение об успешном выполнении.
      */
-    @PostMapping("/relocate-half-capital-population")
-    public ResponseEntity<String> relocateHalfOfCapitalPopulation() {
+    @GetMapping("/relocate-half-capital-population")
+    public ResponseEntity<MessageDTO> relocateHalfOfCapitalPopulation() {
         String message = specialOperationsService.relocateHalfOfCapitalPopulation();
-        return ResponseEntity.ok(message);
+        return ResponseEntity.ok(new MessageDTO(message));
     }
 }

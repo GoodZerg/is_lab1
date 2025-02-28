@@ -69,7 +69,7 @@ public class SpecialOperationsService {
         CityDTO cityDTO = new CityDTO();
         cityDTO.setId(city.getId());
         cityDTO.setName(city.getName());
-        cityDTO.setCoordinates(new CoordinatesDTO(city.getCoordinates().getX(), city.getCoordinates().getY()));
+        cityDTO.setCoordinates(new CoordinatesDTO(city.getCoordinates().getId(), city.getCoordinates().getX(), city.getCoordinates().getY()));
         cityDTO.setCreationDate(city.getCreationDate());
         cityDTO.setArea(city.getArea());
         cityDTO.setPopulation(city.getPopulation());
@@ -79,7 +79,7 @@ public class SpecialOperationsService {
         cityDTO.setClimate(city.getClimate());
         cityDTO.setGovernment(city.getGovernment());
         cityDTO.setStandardOfLiving(city.getStandardOfLiving());
-        cityDTO.setGovernor(new HumanDTO(city.getGovernor().getHeight()));
+        cityDTO.setGovernor(new HumanDTO(city.getGovernor().getId(), city.getGovernor().getHeight()));
         cityDTO.setUserId(city.getUser().getId());
         return cityDTO;
     }

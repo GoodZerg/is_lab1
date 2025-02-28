@@ -1,6 +1,7 @@
 package com.is.back.controllers;
 
 import com.is.back.dto.AdminRequestDTO;
+import com.is.back.dto.MessageDTO;
 import com.is.back.services.AdminRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,12 +31,12 @@ public class AdminController {
     /**
      * Одобрить заявку на регистрацию администратора.
      *
-     * @param requestId ID заявки.
+     * @param dto ID заявки.
      * @return Сообщение об успешном одобрении.
      */
-    @PostMapping("/requests/{requestId}/approve")
-    public ResponseEntity<String> approveAdminRequest(@PathVariable Long requestId) {
-        AdminRequestDTO message = adminRequestService.approveAdminRequest(requestId);
-        return ResponseEntity.ok(message.toString());
+    @PostMapping("/approve")
+    public ResponseEntity<AdminRequestDTO> approveAdminRequest(@RequestBody MessageDTO dto) {
+        AdminRequestDTO message = adminRequestService.approveAdminRequest(Long.valueOf(dto.getMessage()));
+        return ResponseEntity.ok(message);
     }
 }

@@ -3,10 +3,12 @@ package com.is.back.services;
 import com.is.back.dto.UserDTO;
 import com.is.back.dto.UserLoginDTO;
 import com.is.back.dto.UserRegistrationDTO;
+import com.is.back.dto.UserLoginResponseDTO;
 import com.is.back.entity.Users;
 import com.is.back.exception.UserAlreadyExistsException;
 import com.is.back.repositories.UserRepository;
 import com.is.back.security.JwtUtil;
+import com.is.back.services.AdminRequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,13 +28,15 @@ public class AuthService {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
 
+    private final AdminRequestService adminRequestService;
+
     /**
      * Аутентифицирует пользователя и возвращает JWT-токен.
      *
      * @param loginRequest Запрос на аутентификацию (логин и пароль).
      * @return JWT-токен.
      */
-    public String signIn(UserLoginDTO loginRequest) {
+    public UserLoginResponseDTO signIn(UserLoginDTO loginRequest) {
         // Аутентификация пользователя
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -40,11 +44,16 @@ public class AuthService {
                         loginRequest.getPassword())
         );
 
-        // Генерация JWT-токена
-        return jwtUtil.generateToken(
-                    userService.convertToDTO(
-                        userService.getUserByName(loginRequest.getUsername())
-                    ));
+        UserDTO user =
+                userService.convertToDTO(userService.getUserByName(loginRequest.getUsername()));
+
+        String token = jwtUtil.generateToken(user);
+
+        return new UserLoginResponseDTO(user.getUsername(),
+                user.getId(),
+                token,
+                user.getRole()
+        );
     }
 
     /**
@@ -54,7 +63,7 @@ public class AuthService {
      * @return Сообщение об успешной регистрации.
      * @throws UserAlreadyExistsException Если пользователь с таким именем уже существует.
      */
-    public String signUp(UserRegistrationDTO registrationDTO) throws UserAlreadyExistsException {
+    public UserLoginResponseDTO signUp(UserRegistrationDTO registrationDTO) throws UserAlreadyExistsException {
         // Проверяем, существует ли пользователь с таким именем
         if (userRepository.findByUsername(registrationDTO.getUsername()).isPresent()) {
             throw new UserAlreadyExistsException("User with username " + registrationDTO.getUsername() + " already exists");
@@ -63,10 +72,14 @@ public class AuthService {
         Users user = new Users();
         user.setUsername(registrationDTO.getUsername());
         user.setPassword(passwordEncoder.encode(registrationDTO.getPassword()));
-        user.setRole(registrationDTO.getRole());
 
+        boolean need_request = (registrationDTO.getRole().equals("ADMIN"));
+
+        registrationDTO.setRole("USER");
+        user.setRole(registrationDTO.getRole());
         Users savedUser = userRepository.save(user);
 
+        if(need_request) adminRequestService.createAdminRequest(user.getId());
 
         return signIn(new UserLoginDTO(registrationDTO.getUsername(), registrationDTO.getPassword()));
     }

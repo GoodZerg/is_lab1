@@ -2,6 +2,7 @@ package com.is.back.controllers;
 
 import com.is.back.dto.UserLoginDTO;
 import com.is.back.dto.UserRegistrationDTO;
+import com.is.back.dto.UserLoginResponseDTO;
 import com.is.back.exception.UserAlreadyExistsException;
 import com.is.back.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +27,9 @@ public class AuthController {
      * @return JWT-токен.
      */
     @PostMapping("/login")
-    public ResponseEntity<String> signIn(@RequestBody UserLoginDTO loginRequest) {
-        String token = authService.signIn(loginRequest);
-        return ResponseEntity.ok(token);
+    public ResponseEntity<UserLoginResponseDTO> signIn(@RequestBody UserLoginDTO loginRequest) {
+        UserLoginResponseDTO response = authService.signIn(loginRequest);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -38,12 +39,12 @@ public class AuthController {
      * @return Сообщение об успешной регистрации.
      */
     @PostMapping("/register")
-    public ResponseEntity<String> signUp(@RequestBody UserRegistrationDTO registrationDTO) {
+    public ResponseEntity<UserLoginResponseDTO> signUp(@RequestBody UserRegistrationDTO registrationDTO) {
         try {
-            String message = authService.signUp(registrationDTO);
-            return ResponseEntity.ok(message);
+            UserLoginResponseDTO response = authService.signUp(registrationDTO);
+            return ResponseEntity.ok(response);
         } catch (UserAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
         }
     }
 }
