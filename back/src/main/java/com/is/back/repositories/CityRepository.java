@@ -19,6 +19,8 @@ public interface CityRepository extends JpaRepository<City, Long> {
     @Query(value = "SELECT * FROM city WHERE name LIKE :prefix%", nativeQuery = true)
     List<City> findByNameStartingWith(@Param("prefix") String prefix);
 
+    @Query(value = "SELECT city.* FROM city JOIN human h ON governor_id = h.id WHERE h.height < :max_height", nativeQuery = true)
+    List<City> findByGovernorLessThan(@Param("max_height") long max_height);
     // Найти все города, где значение поля metersAboveSeaLevel больше заданного
     @Query(value = "SELECT * FROM city WHERE meters_above_sea_level > :meters", nativeQuery = true)
     List<City> findByMetersAboveSeaLevelGreaterThan(@Param("meters") long meters);

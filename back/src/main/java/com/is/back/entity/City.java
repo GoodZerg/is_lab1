@@ -1,7 +1,9 @@
 package com.is.back.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+//import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,16 +32,20 @@ public class City {
     private Coordinates coordinates;
 
     @Column(name = "creation_date", nullable = false)
+    //@JsonFormat(pattern = "dd-MM-yyyy")
     @Temporal(TemporalType.TIMESTAMP)
     private Date creationDate;
 
+    //@Min(value = 0)
     @Column(nullable = false)
     private Integer area;
 
+    //@Min(value = 0)
     @Column(nullable = false)
     private Integer population;
 
     @Column(name = "establishment_date")
+    //@JsonFormat(pattern = "dd-MM-yyyy")
     private java.time.LocalDateTime establishmentDate;
 
     @Column(nullable = false)

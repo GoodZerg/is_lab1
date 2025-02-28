@@ -49,7 +49,7 @@ public class SpecialOperationsController {
      * @return Список городов.
      */
     @GetMapping("/cities-by-governor-height")
-    public ResponseEntity<List<CityDTO>> getCitiesByGovernorHeightLessThan(@RequestParam Double height) {
+    public ResponseEntity<List<CityDTO>> getCitiesByGovernorHeightLessThan(@RequestParam long height) {
         List<CityDTO> cities = specialOperationsService.getCitiesByGovernorHeightLessThan(height);
         return ResponseEntity.ok(cities);
     }

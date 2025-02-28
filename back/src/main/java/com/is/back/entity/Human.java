@@ -2,6 +2,7 @@ package com.is.back.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+//import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,7 @@ public class Human {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+//    @Min(value = 0)
     private Double height;
 
     public Human(Double height) {

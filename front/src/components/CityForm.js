@@ -13,7 +13,7 @@ const CityForm = () => {
         name: '',
         coordinates: { id: 0, x: 0, y: 0 },
         creationDate: Date.now(),
-        establishmentDate: '',
+        establishmentDate: '', // Добавлено поле establishmentDate
         area: 0,
         population: 0,
         capital: false,
@@ -72,17 +72,33 @@ const CityForm = () => {
 
         if (!isEditable) return;
 
+        // Проверка значений
+        if (city.population < 0 || city.area < 0 || city.governor.height < 0) {
+            setError('Population, Area, and Governor height must be greater than or equal to 0.');
+            return;
+        }
+
+        // Преобразование establishmentDate в формат LocalDateTime
+        const establishmentDate = city.establishmentDate
+            ? `${city.establishmentDate}T00:00:00` // Добавляем время
+            : null;
+
         try {
+            const cityData = {
+                ...city,
+                establishmentDate, // Используем преобразованное значение
+            };
+
             if (city.id) {
-                await cityService.updateCity(city);
+                await cityService.updateCity(cityData);
             } else {
-                await cityService.createCity(city);
+                await cityService.createCity(cityData);
             }
             alert('City saved successfully!');
             clear();
             navigate('/');
         } catch (error) {
-            alert('Failed to save city: ' + error.message);
+            setError('Failed to save city: ' + error.message);
         }
     };
 
@@ -221,6 +237,7 @@ const CityForm = () => {
                         name="area"
                         value={city.area}
                         onChange={handleChange}
+                        min="0" // Ограничение на минимальное значение
                         disabled={!isEditable}
                     />
                 </div>
@@ -231,6 +248,18 @@ const CityForm = () => {
                         className="form-control"
                         name="population"
                         value={city.population}
+                        onChange={handleChange}
+                        min="0" // Ограничение на минимальное значение
+                        disabled={!isEditable}
+                    />
+                </div>
+                <div className="mb-3">
+                    <label className="form-label">Establishment Date</label>
+                    <input
+                        type="date"
+                        className="form-control"
+                        name="establishmentDate"
+                        value={city.establishmentDate}
                         onChange={handleChange}
                         disabled={!isEditable}
                     />
@@ -336,11 +365,22 @@ const CityForm = () => {
                                     governor: { ...prev.governor, height: e.target.value },
                                 }))
                             }
+                            min="0" // Ограничение на минимальное значение
                             disabled={!isEditable}
                         />
                     )}
                 </div>
-                <button type="submit" className="btn btn-success">
+                {error && <div className="text-danger mb-3">{error}</div>} {/* Отображение ошибки */}
+                <button
+                    type="submit"
+                    className="btn btn-success"
+                    disabled={
+                        !isEditable ||
+                        city.population < 0 ||
+                        city.area < 0 ||
+                        city.governor.height < 0
+                    } // Блокировка кнопки, если значения не соответствуют требованиям
+                >
                     Submit
                 </button>
             </form>

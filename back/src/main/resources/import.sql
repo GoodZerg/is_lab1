@@ -6,34 +6,19 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION find_cities_by_name_prefix(prefix TEXT)
-RETURNS TABLE (
-    id BIGINT,
-    name TEXT,
-    coordinates_id BIGINT,
-    creation_date TIMESTAMP,
-    area INT,
-    population INT,
-    establishment_date TIMESTAMP,
-    capital BOOLEAN,
-    meters_above_sea_level BIGINT,
-    climate TEXT,
-    government TEXT,
-    standard_of_living TEXT,
-    governor_id BIGINT,
-    user_id BIGINT
-) AS $$
+CREATE OR REPLACE FUNCTION find_cities_by_name_prefix(prefix VARCHAR)
+RETURNS setof city AS $$
 BEGIN
-RETURN QUERY SELECT * FROM city WHERE name LIKE prefix || '%';
+RETURN QUERY SELECT * FROM city WHERE city.name LIKE prefix || '%';
 END;
 $$ LANGUAGE plpgsql;
 
 
 
-CREATE OR REPLACE FUNCTION find_cities_by_governor_height(max_height DOUBLE PRECISION)
+CREATE OR REPLACE FUNCTION find_cities_by_governor_height(max_height INT)
 RETURNS TABLE (
     id BIGINT,
-    name TEXT,
+    name VARCHAR,
     coordinates_id BIGINT,
     creation_date TIMESTAMP,
     area INT,
