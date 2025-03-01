@@ -93,7 +93,7 @@ public class CityController {
             @RequestParam("userId") Long userId ) {
         try {
             cityService.importCitiesFromJson(file, userId);
-            return ResponseEntity.ok(new MessageDTO("Cities imported successfully!"));
+            return ResponseEntity.ok(new MessageDTO("Cities import start!"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageDTO("Error during import: " + e.getMessage()));
         }

@@ -12,15 +12,18 @@ import com.is.back.repositories.CoordinatesRepository;
 import com.is.back.repositories.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.datatype.jsr310.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -103,50 +106,69 @@ public class CityService {
         cityRepository.deleteById(id);
     }
 
-    public void importCitiesFromJson(MultipartFile file, Long userId ) throws Exception {
-        List<Coordinates> coords;
-        List<Human> humans;
-        List<City> cities;
+    @Async("taskExecutor")
+    @Transactional
+    public CompletableFuture<Void> importCitiesFromJson(MultipartFile file, Long userId) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                byte[] fileBytes = file.getBytes();
+                String fileContent = new String(fileBytes, StandardCharsets.UTF_8);
+                System.out.println("File content: " + new String(file.getBytes()));
+                List<Coordinates> coords;
+                List<Human> humans;
+                List<City> cities;
 
-        ImportHistoryDTO historyDTO = new ImportHistoryDTO();
-        historyDTO.setUserId(userId);
+                ImportHistoryDTO historyDTO = new ImportHistoryDTO();
+                historyDTO.setUserId(userId);
 
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.registerModule(new JavaTimeModule());
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.registerModule(new JavaTimeModule());
 
-            cities = objectMapper.readValue(file.getInputStream(), new TypeReference<List<City>>() {
-            });
+                cities = objectMapper.readValue(fileBytes, new TypeReference<List<City>>() {});
 
-            Users user = userRepository.findById(userId)
-                    .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+                Users user = userRepository.findById(userId)
+                        .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-            coords = new java.util.ArrayList<>(Collections.emptyList());
-            humans = new java.util.ArrayList<>(Collections.emptyList());
+                coords = new java.util.ArrayList<>(Collections.emptyList());
+                humans = new java.util.ArrayList<>(Collections.emptyList());
 
-            // Проверка данных перед сохранением
-            for (City city : cities) {
-                checkUniqueness(city);
-                city.setUser(user);
-                city.setCreationDate(new Date());
-                validateCity(city);
-                coords.add(city.getCoordinates());
-                humans.add(city.getGovernor());
+                // Проверка данных перед сохранением
+                int index = 0;
+                for (City city : cities) {
+                    index++;
+                    checkUniqueness(city);
+                    checkUniquenessImport(city, cities.subList(index, cities.size()));
+                    city.setUser(user);
+                    city.setCreationDate(new Date());
+                    validateCity(city);
+
+                    coords.add(city.getCoordinates());
+                    humans.add(city.getGovernor());
+                }
+
+                // Сохранение всех городов в одной транзакции
+                coordinatesRepository.saveAll(coords);
+                humanRepository.saveAll(humans);
+                cityRepository.saveAll(cities);
+
+                historyDTO.setStatus("SUCCESS");
+                historyDTO.setAddedObjects(cities.size());
+
+                importHistoryService.saveImportHistory(historyDTO);
+            } catch (Exception e) {
+                e.printStackTrace();
+                ImportHistoryDTO historyDTO = new ImportHistoryDTO();
+                historyDTO.setUserId(userId);
+                historyDTO.setStatus("FAIL");
+                importHistoryService.saveImportHistory(historyDTO);
+                throw new RuntimeException("Error during import: " + e.getMessage(), e);
             }
-        } catch (Exception e) {
-            historyDTO.setStatus("FAIL");
-            importHistoryService.saveImportHistory(historyDTO);
-            throw e;
-        }
-        // Сохранение всех городов в одной транзакции
-        coordinatesRepository.saveAll(coords);
-        humanRepository.saveAll(humans);
-        cityRepository.saveAll(cities);
-
-        historyDTO.setStatus("SUCCESS");
-        historyDTO.setAddedObjects(cities.size());
-
-        importHistoryService.saveImportHistory(historyDTO);
+        }).exceptionally(ex -> {
+            // Логирование ошибки
+            ex.printStackTrace();
+            System.err.println("Import failed: " + ex.getMessage());
+            return null;
+        });
     }
 
     private void validateCity(City city) throws Exception {
@@ -164,6 +186,14 @@ public class CityService {
         }
         if (city.getGovernor() == null || city.getGovernor().getHeight() <= 0) {
             throw new Exception("Governor height must be greater than 0.");
+        }
+    }
+
+    private void checkUniquenessImport(City city, List<City> cityList) throws Exception {
+        for (City city1 : cityList) {
+            if (city1.getName().equals(city.getName())) {
+                throw new Exception("City name shall be UNIQUE");
+            }
         }
     }
 
