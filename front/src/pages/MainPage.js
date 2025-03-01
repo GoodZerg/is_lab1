@@ -4,6 +4,7 @@ import CityList from '../components/CityList';
 import NavigationComponent from '../components/NavigationComponent';
 import {useDispatch, useSelector} from "react-redux";
 import {clear} from "../Store/Slices/chosenObjSlice";
+import CityImport from "../components/CityImport";
 
 const MainPage = () => {
     const dispatch = useDispatch();
@@ -17,6 +18,7 @@ const MainPage = () => {
     return (
         <div>
             <NavigationComponent />
+            <CityImport/>
             <div className="container mt-4">
                 <h1>Main Page</h1>
                 <button className="btn btn-primary mb-3" onClick={handleCreateCity}>

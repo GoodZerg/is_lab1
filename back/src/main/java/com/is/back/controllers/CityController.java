@@ -1,14 +1,15 @@
 package com.is.back.controllers;
 
-import com.is.back.dto.CityDTO;
-import com.is.back.dto.CoordinatesDTO;
-import com.is.back.dto.HumanDTO;
-import com.is.back.dto.MessageDTO;
+import com.is.back.dto.*;
 import com.is.back.services.CityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.datatype.jsr310.*;
 
 import java.util.List;
 
@@ -77,6 +78,19 @@ public class CityController {
         CityDTO updatedCity = cityService.updateCity(cityDTO.getId(), cityDTO);
         return ResponseEntity.ok(updatedCity);
     }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<MessageDTO> importCities(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("userId") Long userId ) {
+        try {
+            cityService.importCitiesFromJson(file, userId);
+            return ResponseEntity.ok(new MessageDTO("Cities imported successfully!"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageDTO("Error during import: " + e.getMessage()));
+        }
+    }
+
 
     /**
      * Удалить город.

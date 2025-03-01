@@ -4,10 +4,10 @@ export const API_URL = 'http://localhost:32810/'
 const token = store.getState().user.token;
 
 
-export async function makeRequest(url, method, body = null) {
-    const headers = {
+export async function makeRequest(url, method, body = null, needStringify = true) {
+    const headers = needStringify ? {
         'Content-Type': 'application/json',
-    };
+    } : {};
 
     if(token && token!=='') headers['Authorization'] = 'Bearer ' + token;
 
@@ -17,7 +17,7 @@ export async function makeRequest(url, method, body = null) {
         response = await fetch(url, {
             method,
             headers,
-            body: JSON.stringify(body),
+            body: needStringify ? JSON.stringify(body) : body,
         });
     } else {
         response = await fetch(url, {

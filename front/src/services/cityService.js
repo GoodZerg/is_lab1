@@ -28,5 +28,12 @@ export const cityService = {
 
     deleteCity: async (id) => {
         return await makeRequest(`${CITY_URL}/delete`, 'POST', { message: id.toString() });
-    }
+    },
+
+    importCities: async (formData, userId) => {
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+        return await makeRequest(`${CITY_URL}/import?userId=${userId}`, 'POST', formData, false);
+    },
 };

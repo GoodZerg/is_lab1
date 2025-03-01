@@ -9,6 +9,7 @@ import SpecialOpPage from './pages/SpecialOpPage';
 import {Provider, useSelector} from 'react-redux';
 import store from './Store/store';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import HistoryImportPage from "./pages/HistoryImportPage";
 
 const AppRoutes = () => {
     const user = useSelector(state => state.user);
@@ -23,6 +24,7 @@ const AppRoutes = () => {
                         <>
                             <Route path="/city-form" element={<CityPage />} />
                             <Route path="/special-operations" element={<SpecialOpPage />} />
+                            <Route path="/import-history" element={<HistoryImportPage />} />
                             {user.adminRole && <Route path="/admin-list" element={<AdminListPage />} />}
                         </>
                         ):(

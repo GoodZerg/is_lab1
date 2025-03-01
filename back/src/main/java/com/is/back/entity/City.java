@@ -2,6 +2,7 @@ package com.is.back.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.datatype.jsr310.*;
 import jakarta.persistence.*;
 //import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;

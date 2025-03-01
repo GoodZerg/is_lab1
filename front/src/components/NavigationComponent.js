@@ -7,6 +7,7 @@ const NavigationComponent = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const isAuthenticated = useSelector((state) => state.user.auth);
+    const username = useSelector((state) => state.user.username);
     const isAdmin = useSelector((state) => state.user.adminRole);
 
     const handleLogout = () => {
@@ -18,7 +19,8 @@ const NavigationComponent = () => {
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
             <div className="container-fluid">
                 <a className="navbar-brand" onClick={() => navigate('/')}>
-                    City App
+
+                    {isAuthenticated?(<>{username}</>):(<>City App</>)}
                 </a>
                 <div className="collapse navbar-collapse">
                     <ul className="navbar-nav me-auto mb-2 mb-lg-0">
@@ -41,20 +43,24 @@ const NavigationComponent = () => {
                             </button>
                         </li>
                         )}
-                    </ul>
-                    <div className="d-flex">
+                        {isAuthenticated && (
+                            <li className="nav-item">
+                                <button className="btn btn-link nav-link" onClick={() => navigate('/import-history')}>
+                                    Import History
+                                </button>
+                            </li>
+                        )}
+                            </ul>
+                            <div className="d-flex">
                         {isAuthenticated ? (
                             <button className="btn btn-outline-danger" onClick={handleLogout}>
-                                Logout
-                            </button>
-                        ) : (
-                            <>
-                                <button className="btn btn-outline-primary me-2" onClick={() => navigate('/login')}>
+                        Logout
+                    </button>
+                    ) : (
+                    <>
+                        <button className="btn btn-outline-primary me-2" onClick={() => navigate('/login')}>
                                     Login
-                                </button>
-                                <button className="btn btn-outline-success" onClick={() => navigate('/register')}>
-                                    Register
-                                </button>
+                        </button>
                             </>
                         )}
                     </div>
