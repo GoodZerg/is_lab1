@@ -6,11 +6,12 @@ import AuthPage from './pages/AuthPage';
 import CityPage from './pages/CityPage';
 import AdminListPage from './pages/AdminListPage';
 import SpecialOpPage from './pages/SpecialOpPage';
-import { Provider } from 'react-redux';
+import {Provider, useSelector} from 'react-redux';
 import store from './Store/store';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const AppRoutes = () => {
-    //const user = useSelector(state => state.auth);
+    const user = useSelector(state => state.user);
     return (
         <Provider store={store}>
             <Router>
@@ -18,15 +19,25 @@ const AppRoutes = () => {
                     <Route path="/" element={<MainPage />} />
                     <Route path="/login" element={<AuthPage />} />
                     <Route path="/register" element={<AuthPage />} />
-                    <Route path="/city-form" element={<CityPage />} />
-                    <Route path="/admin-list" element={<AdminListPage />} />
-                    <Route path="/special-operations" element={<SpecialOpPage />} />
+                    {user.auth?(
+                        <>
+                            <Route path="/city-form" element={<CityPage />} />
+                            <Route path="/special-operations" element={<SpecialOpPage />} />
+                            {user.adminRole && <Route path="/admin-list" element={<AdminListPage />} />}
+                        </>
+                        ):(
+                        <Route path="*" element={<AuthPage />} />
+                    )}
                 </Routes>
             </Router>
         </Provider>
     );
 };
-
+/*
+                    <Route path="/city-form" element={<CityPage />} />
+                    <Route path="/admin-list" element={<AdminListPage />} />
+                    <Route path="/special-operations" element={<SpecialOpPage />} />
+ */
 /*
         <Router>
 

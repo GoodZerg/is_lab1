@@ -15,7 +15,7 @@ const CityList = () => {
 
     // Состояние для пагинации
     const [currentPage, setCurrentPage] = useState(1); // Текущая страница
-    const [itemsPerPage] = useState(10); // Количество элементов на странице
+    const [itemsPerPage] = useState(4); // Количество элементов на странице
 
     // Состояние для фильтрации
     const [filter, setFilter] = useState(''); // Текущий фильтр
