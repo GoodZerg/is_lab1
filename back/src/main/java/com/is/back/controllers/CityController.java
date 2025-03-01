@@ -63,8 +63,12 @@ public class CityController {
      */
     @PostMapping("/create")
     public ResponseEntity<CityDTO> createCity(@RequestBody CityDTO cityDTO) {
-        CityDTO createdCity = cityService.createCity(cityDTO);
-        return ResponseEntity.ok(createdCity);
+        try {
+            CityDTO createdCity = cityService.createCity(cityDTO);
+            return ResponseEntity.ok(createdCity);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
     /**
@@ -75,8 +79,12 @@ public class CityController {
      */
     @PostMapping("/update")
     public ResponseEntity<CityDTO> updateCity(@RequestBody CityDTO cityDTO) {
-        CityDTO updatedCity = cityService.updateCity(cityDTO.getId(), cityDTO);
-        return ResponseEntity.ok(updatedCity);
+        try {
+            CityDTO updatedCity = cityService.updateCity(cityDTO.getId(), cityDTO);
+            return ResponseEntity.ok(updatedCity);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -89,12 +89,15 @@ const CityForm = () => {
                 establishmentDate, // Используем преобразованное значение
             };
 
+            let r;
             if (city.id) {
-                await cityService.updateCity(cityData);
+                r = await cityService.updateCity(cityData);
             } else {
-                await cityService.createCity(cityData);
+                r = await cityService.createCity(cityData);
             }
-            alert('City saved successfully!');
+            if (!r.ok)
+                setError('Failed to save city: ');
+            //alert('City saved successfully!');
             clear();
             navigate('/');
         } catch (error) {

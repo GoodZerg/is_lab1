@@ -71,23 +71,25 @@ public class CityService {
 
     // Создать новый город
     @Transactional
-    public CityDTO createCity(CityDTO cityDTO) {
+    public CityDTO createCity(CityDTO cityDTO) throws Exception {
         Users user = userRepository.findById(cityDTO.getUserId())
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + cityDTO.getUserId()));
 
         City city = convertToEntity(cityDTO);
         city.setUser(user);
+        checkUniqueness(city);
         City savedCity = cityRepository.save(city);
         return convertToDTO(savedCity);
     }
 
     // Обновить город
     @Transactional
-    public CityDTO updateCity(Long id, CityDTO cityDTO) {
+    public CityDTO updateCity(Long id, CityDTO cityDTO) throws Exception {
         City existingCity = cityRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("City not found with id: " + id));
 
         moveDTOtoEntity(cityDTO, existingCity);
+        checkUniqueness(existingCity);
         City updatedCity = cityRepository.save(existingCity);
         return convertToDTO(updatedCity);
     }
@@ -124,6 +126,7 @@ public class CityService {
 
             // Проверка данных перед сохранением
             for (City city : cities) {
+                checkUniqueness(city);
                 city.setUser(user);
                 city.setCreationDate(new Date());
                 validateCity(city);
@@ -131,10 +134,9 @@ public class CityService {
                 humans.add(city.getGovernor());
             }
         } catch (Exception e) {
-            e.printStackTrace();
             historyDTO.setStatus("FAIL");
             importHistoryService.saveImportHistory(historyDTO);
-            return;
+            throw e;
         }
         // Сохранение всех городов в одной транзакции
         coordinatesRepository.saveAll(coords);
@@ -162,6 +164,17 @@ public class CityService {
         }
         if (city.getGovernor() == null || city.getGovernor().getHeight() <= 0) {
             throw new Exception("Governor height must be greater than 0.");
+        }
+    }
+
+    private void checkUniqueness(City city) throws Exception {
+        List<City> sameNameCities =  cityRepository.findByName(city.getName());
+        if (sameNameCities != null && !sameNameCities.isEmpty()) {
+            for (City city1 : sameNameCities) {
+                if (!city1.getId().equals(city.getId())) {
+                    throw new Exception("City name shall be UNIQUE");
+                }
+            }
         }
     }
 

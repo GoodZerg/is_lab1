@@ -30,7 +30,7 @@ const AuthComponent = () => {
                 navigate('/');
             } else {
                 await authService.register({ username, password, role });
-                alert('Registration successful! Please login.');
+                //alert('Registration successful! Please login.');
                 setIsLogin(true);
             }
         } catch (error) {
