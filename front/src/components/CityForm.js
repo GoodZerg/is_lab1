@@ -57,6 +57,9 @@ const CityForm = () => {
     useEffect(() => {
         if (Object.entries(chosenCity).length !== 0 && chosenCity.name !== '') {
             setCity(chosenCity);
+            console.log(user.userId);
+            console.log(chosenCity.userId);
+            console.log(chosenCity.userId === user.userId);
 
             if (chosenCity.userId === user.userId || user.adminRole === 'ADMIN') {
                 setIsEditable(true);
@@ -70,6 +73,8 @@ const CityForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        console.log(city);
+
         if (!isEditable) return;
 
         // Проверка значений
@@ -78,12 +83,21 @@ const CityForm = () => {
             return;
         }
 
-        // Преобразование establishmentDate в формат LocalDateTime
-        const establishmentDate = city.establishmentDate
-            ? `${city.establishmentDate}T00:00:00` // Добавляем время
-            : null;
+        if (city.name === '' || city.climate === '' || city.government === '' || city.standardOfLiving === '') {
+            setError('Name, climate, government, and standard of living must be not empty.');
+            return;
+        }
 
+        // Преобразование establishmentDate в формат LocalDateTime
+        let establishmentDate = city.establishmentDate
+            ? city.establishmentDate
+            : '2000-01-01T00:00:00';
+
+        if(establishmentDate.length < '2000-01-01T00:00:00'.length){
+            establishmentDate += 'T00:00:00';
+        }
         try {
+            city.userId = user.userId;
             const cityData = {
                 ...city,
                 establishmentDate, // Используем преобразованное значение
@@ -95,12 +109,16 @@ const CityForm = () => {
             } else {
                 r = await cityService.createCity(cityData);
             }
-            if (!r.ok)
+            /*if (!r.ok) {
                 setError('Failed to save city: ');
+                return;
+            }*/
             //alert('City saved successfully!');
             clear();
             navigate('/');
         } catch (error) {
+            console.log("asdadadadads");
+            console.log(user.userId);
             setError('Failed to save city: ' + error.message);
         }
     };

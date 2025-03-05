@@ -4,6 +4,9 @@ import { cityService } from '../services/cityService';
 import { useDispatch, useSelector } from 'react-redux';
 import { setCity } from '../Store/Slices/chosenObjSlice';
 import { setCities } from "../Store/Slices/collectionSlice";
+import {API_URL} from '../services/service'
+import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
 
 const CityList = () => {
     const cities = useSelector(state => state.collection);
@@ -38,7 +41,36 @@ const CityList = () => {
             }
         };
         fetchCities();
-    }, []);
+
+        const socket = new SockJS(API_URL + 'ws');
+        const stompClient = new Client({
+            webSocketFactory: () => socket,
+            reconnectDelay: 5000,
+            debug: (str) => {
+                console.log(str);
+            },
+        });
+
+        stompClient.onConnect = (frame) => {
+            console.log('Connected: ' + frame);
+            stompClient.subscribe('/topic/cities', (message) => {
+                const updatedCities = JSON.parse(message.body);
+                dispatch(setCities(updatedCities));
+            });
+        };
+
+        stompClient.onStompError = (frame) => {
+            console.error('Broker reported error: ' + frame.headers['message']);
+            console.error('Additional details: ' + frame.body);
+        };
+
+        stompClient.activate();
+
+        return () => {
+            stompClient.deactivate();
+        };
+
+    }, [dispatch]);
 
     const handleRowClick = (city) => {
         dispatch(setCity(city));
@@ -56,7 +88,7 @@ const CityList = () => {
             await cityService.deleteCity(cityId); // Удаление города
             const updatedCities = cities.cities.filter(city => city.id !== cityId); // Обновление списка городов
             dispatch(setCities(updatedCities)); // Обновление состояния
-            alert("City deleted successfully!");
+            //alert("City deleted successfully!");
         } catch (error) {
             alert("Failed to delete city: " + error.message);
         }
@@ -141,7 +173,7 @@ const CityList = () => {
     if (error) {
         return <div>Error: {error}</div>; // Отображение ошибки
     }
-
+    console.log(user);
     return (
         <div className="container mt-4">
             <h2>City List</h2>

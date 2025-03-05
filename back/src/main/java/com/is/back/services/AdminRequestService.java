@@ -7,8 +7,11 @@ import com.is.back.entity.Users;
 import com.is.back.exception.NotFoundException;
 import com.is.back.repositories.AdminRequestRepository;
 import com.is.back.repositories.UserRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

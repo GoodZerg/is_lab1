@@ -30,6 +30,10 @@ export async function makeRequest(url, method, body = null, needStringify = true
 
     const data = await response.json();
 
+    if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${data.message}`);
+    }
+
     if(data){
         return data
     } else {

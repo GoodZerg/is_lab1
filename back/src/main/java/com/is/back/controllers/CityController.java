@@ -20,6 +20,7 @@ import java.util.List;
 public class CityController {
     private final CityService cityService;
 
+    private final WebSocketController webSocketController;
     /**
      * Получить все города.
      *
@@ -62,12 +63,15 @@ public class CityController {
      * @return Созданный город.
      */
     @PostMapping("/create")
-    public ResponseEntity<CityDTO> createCity(@RequestBody CityDTO cityDTO) {
+    public ResponseEntity<?> createCity(@RequestBody CityDTO cityDTO) {
         try {
             CityDTO createdCity = cityService.createCity(cityDTO);
+
+            webSocketController.sendCitiesUpdate();
+
             return ResponseEntity.ok(createdCity);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageDTO(e.getMessage()));
         }
     }
 
@@ -78,12 +82,15 @@ public class CityController {
      * @return Обновленный город.
      */
     @PostMapping("/update")
-    public ResponseEntity<CityDTO> updateCity(@RequestBody CityDTO cityDTO) {
+    public ResponseEntity<?> updateCity(@RequestBody CityDTO cityDTO) {
         try {
             CityDTO updatedCity = cityService.updateCity(cityDTO.getId(), cityDTO);
+
+            webSocketController.sendCitiesUpdate();
+
             return ResponseEntity.ok(updatedCity);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageDTO(e.getMessage()));
         }
     }
 
@@ -93,9 +100,13 @@ public class CityController {
             @RequestParam("userId") Long userId ) {
         try {
             cityService.importCitiesFromJson(file, userId);
-            return ResponseEntity.ok(new MessageDTO("Cities import start!"));
+
+            webSocketController.sendCitiesUpdate();
+
+            return ResponseEntity.ok(new MessageDTO("Cities imported correctly"));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageDTO("Error during import: " + e.getMessage()));
+            cityService._saveImportHistory(userId, "FAIL", 0);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageDTO(e.getMessage()));
         }
     }
 
@@ -109,6 +120,9 @@ public class CityController {
     @PostMapping("/delete")
     public ResponseEntity<MessageDTO> deleteCity(@RequestBody MessageDTO dto) {
         cityService.deleteCity(Long.valueOf(dto.getMessage()));
+
+        webSocketController.sendCitiesUpdate();
+
         return ResponseEntity.ok(new MessageDTO("City deleted successfully"));
     }
 }

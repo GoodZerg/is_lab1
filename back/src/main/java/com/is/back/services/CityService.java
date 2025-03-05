@@ -6,20 +6,19 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.is.back.dto.*;
 import com.is.back.entity.*;
 import com.is.back.exception.NotFoundException;
-import com.is.back.repositories.CityRepository;
-import com.is.back.repositories.HumanRepository;
-import com.is.back.repositories.CoordinatesRepository;
-import com.is.back.repositories.UserRepository;
+import com.is.back.repositories.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.datatype.jsr310.*;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -32,13 +31,16 @@ public class CityService {
     @Autowired
     private CityRepository cityRepository;
     @Autowired
+    private AuditLogRepository audRepository;
+    @Autowired
     private HumanRepository humanRepository;
     @Autowired
     private CoordinatesRepository coordinatesRepository;
-
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private AuditLogService auditLogService;
     @Autowired
     private ImportHistoryService importHistoryService;
 
@@ -73,32 +75,60 @@ public class CityService {
     }
 
     // Создать новый город
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public CityDTO createCity(CityDTO cityDTO) throws Exception {
         Users user = userRepository.findById(cityDTO.getUserId())
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + cityDTO.getUserId()));
 
         City city = convertToEntity(cityDTO);
         city.setUser(user);
-        checkUniqueness(city);
+        checkUniqueness(city.getName(), city.getId());
         City savedCity = cityRepository.save(city);
+        /*
+        AuditLog auditLog = new AuditLog();
+        auditLog.setUser(user);
+        auditLog.setAction("Create city");
+        auditLog.setCity(savedCity);
+
+
+        audRepository.save(auditLog);
+        */
+        auditLogService.saveAuditLog(user, savedCity, "Create city");
         return convertToDTO(savedCity);
     }
 
     // Обновить город
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public CityDTO updateCity(Long id, CityDTO cityDTO) throws Exception {
         City existingCity = cityRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("City not found with id: " + id));
 
-        moveDTOtoEntity(cityDTO, existingCity);
-        checkUniqueness(existingCity);
+        try {
+            checkUniqueness(cityDTO.getName(), id);
+            moveDTOtoEntity(cityDTO, existingCity);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw  new Exception("City name shall be UNIQUE");
+        }
+
         City updatedCity = cityRepository.save(existingCity);
+        Users userUpdate = userRepository.findById(cityDTO.getUserId())
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + cityDTO.getUserId()));
+/*
+        AuditLog auditLog = new AuditLog();
+        auditLog.setUser(updatedCity.getUser());
+        auditLog.setAction("update city");
+        auditLog.setCity(updatedCity);
+
+        audRepository.save(auditLog);
+      */
+        auditLogService.saveAuditLog(userUpdate, updatedCity, "Update city");
+
         return convertToDTO(updatedCity);
     }
 
     // Удалить город
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void deleteCity(Long id) {
         if (!cityRepository.existsById(id)) {
             throw new NotFoundException("City not found with id: " + id);
@@ -106,69 +136,58 @@ public class CityService {
         cityRepository.deleteById(id);
     }
 
-    @Async("taskExecutor")
-    @Transactional
-    public CompletableFuture<Void> importCitiesFromJson(MultipartFile file, Long userId) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                byte[] fileBytes = file.getBytes();
-                String fileContent = new String(fileBytes, StandardCharsets.UTF_8);
-                System.out.println("File content: " + new String(file.getBytes()));
-                List<Coordinates> coords;
-                List<Human> humans;
-                List<City> cities;
+    //@Async("taskExecutor")
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public void importCitiesFromJson(MultipartFile file, Long userId) {
+        try {
+            System.out.println("File content: " + new String(file.getBytes()));
+            List<Coordinates> coords;
+            List<Human> humans;
+            List<City> cities;
 
-                ImportHistoryDTO historyDTO = new ImportHistoryDTO();
-                historyDTO.setUserId(userId);
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
 
-                ObjectMapper objectMapper = new ObjectMapper();
-                objectMapper.registerModule(new JavaTimeModule());
+            cities = objectMapper.readValue(file.getInputStream(), new TypeReference<List<City>>() {});
 
-                cities = objectMapper.readValue(fileBytes, new TypeReference<List<City>>() {});
+            Users user = userRepository.findById(userId)
+                    .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-                Users user = userRepository.findById(userId)
-                        .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+            coords = new java.util.ArrayList<>(Collections.emptyList());
+            humans = new java.util.ArrayList<>(Collections.emptyList());
 
-                coords = new java.util.ArrayList<>(Collections.emptyList());
-                humans = new java.util.ArrayList<>(Collections.emptyList());
+            // Проверка данных перед сохранением
+            int index = 0;
+            for (City city : cities) {
+                index++;
+                checkUniqueness(city.getName(), city.getId());
+                checkUniquenessImport(city, cities.subList(index, cities.size()));
+                city.setUser(user);
+                city.setCreationDate(new Date());
+                validateCity(city);
 
-                // Проверка данных перед сохранением
-                int index = 0;
-                for (City city : cities) {
-                    index++;
-                    checkUniqueness(city);
-                    checkUniquenessImport(city, cities.subList(index, cities.size()));
-                    city.setUser(user);
-                    city.setCreationDate(new Date());
-                    validateCity(city);
-
-                    coords.add(city.getCoordinates());
-                    humans.add(city.getGovernor());
-                }
-
-                // Сохранение всех городов в одной транзакции
-                coordinatesRepository.saveAll(coords);
-                humanRepository.saveAll(humans);
-                cityRepository.saveAll(cities);
-
-                historyDTO.setStatus("SUCCESS");
-                historyDTO.setAddedObjects(cities.size());
-
-                importHistoryService.saveImportHistory(historyDTO);
-            } catch (Exception e) {
-                e.printStackTrace();
-                ImportHistoryDTO historyDTO = new ImportHistoryDTO();
-                historyDTO.setUserId(userId);
-                historyDTO.setStatus("FAIL");
-                importHistoryService.saveImportHistory(historyDTO);
-                throw new RuntimeException("Error during import: " + e.getMessage(), e);
+                coords.add(city.getCoordinates());
+                humans.add(city.getGovernor());
             }
-        }).exceptionally(ex -> {
-            // Логирование ошибки
-            ex.printStackTrace();
-            System.err.println("Import failed: " + ex.getMessage());
-            return null;
-        });
+
+            // Сохранение всех городов в одной транзакции
+            coordinatesRepository.saveAll(coords);
+            humanRepository.saveAll(humans);
+            cityRepository.saveAll(cities);
+
+            _saveImportHistory(userId, "SUCCESS", cities.size());
+        } catch (Exception e) {
+            //e.printStackTrace();
+            throw new RuntimeException("Error during import: " + e.getMessage(), e);
+        }
+    }
+
+    public void _saveImportHistory(Long userId, String status, int addedObjects) {
+        ImportHistoryDTO historyDTO = new ImportHistoryDTO();
+        historyDTO.setUserId(userId);
+        historyDTO.setStatus(status);
+        historyDTO.setAddedObjects(addedObjects);
+        importHistoryService.saveImportHistory(historyDTO);
     }
 
     private void validateCity(City city) throws Exception {
@@ -184,7 +203,7 @@ public class CityService {
         if (city.getPopulation() < 0) {
             throw new Exception("Population cannot be negative.");
         }
-        if (city.getGovernor() == null || city.getGovernor().getHeight() <= 0) {
+        if (city.getGovernor() == null || city.getGovernor().getHeight() < 0) {
             throw new Exception("Governor height must be greater than 0.");
         }
     }
@@ -197,11 +216,11 @@ public class CityService {
         }
     }
 
-    private void checkUniqueness(City city) throws Exception {
-        List<City> sameNameCities =  cityRepository.findByName(city.getName());
+    private void checkUniqueness(String name, Long id) throws Exception {
+        List<City> sameNameCities =  cityRepository.findByName(name);
         if (sameNameCities != null && !sameNameCities.isEmpty()) {
             for (City city1 : sameNameCities) {
-                if (!city1.getId().equals(city.getId())) {
+                if (!city1.getId().equals(id)) {
                     throw new Exception("City name shall be UNIQUE");
                 }
             }
