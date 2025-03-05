@@ -24,6 +24,7 @@ public class ImportHistory {
 
     private Long userId; // ID пользователя, запустившего операцию
     private LocalDateTime timestamp; // Время запуска операции
+    private String fileName; // Имя файла в бакете
     private String status; // Статус операции (SUCCESS, FAILED)
     private Integer addedObjects; // Количество добавленных объектов (только для успешных операций)
 

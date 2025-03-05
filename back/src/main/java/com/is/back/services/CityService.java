@@ -82,17 +82,11 @@ public class CityService {
 
         City city = convertToEntity(cityDTO);
         city.setUser(user);
+
         checkUniqueness(city.getName(), city.getId());
+
         City savedCity = cityRepository.save(city);
-        /*
-        AuditLog auditLog = new AuditLog();
-        auditLog.setUser(user);
-        auditLog.setAction("Create city");
-        auditLog.setCity(savedCity);
 
-
-        audRepository.save(auditLog);
-        */
         auditLogService.saveAuditLog(user, savedCity, "Create city");
         return convertToDTO(savedCity);
     }
@@ -107,21 +101,15 @@ public class CityService {
             checkUniqueness(cityDTO.getName(), id);
             moveDTOtoEntity(cityDTO, existingCity);
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             throw  new Exception("City name shall be UNIQUE");
         }
 
         City updatedCity = cityRepository.save(existingCity);
+
         Users userUpdate = userRepository.findById(cityDTO.getUserId())
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + cityDTO.getUserId()));
-/*
-        AuditLog auditLog = new AuditLog();
-        auditLog.setUser(updatedCity.getUser());
-        auditLog.setAction("update city");
-        auditLog.setCity(updatedCity);
 
-        audRepository.save(auditLog);
-      */
         auditLogService.saveAuditLog(userUpdate, updatedCity, "Update city");
 
         return convertToDTO(updatedCity);
@@ -136,25 +124,21 @@ public class CityService {
         cityRepository.deleteById(id);
     }
 
-    //@Async("taskExecutor")
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public void importCitiesFromJson(MultipartFile file, Long userId) {
+    public int importCitiesFromJson(MultipartFile file, Long userId) {
         try {
             System.out.println("File content: " + new String(file.getBytes()));
-            List<Coordinates> coords;
-            List<Human> humans;
-            List<City> cities;
 
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.registerModule(new JavaTimeModule());
 
-            cities = objectMapper.readValue(file.getInputStream(), new TypeReference<List<City>>() {});
+            List<City> cities = objectMapper.readValue(file.getInputStream(), new TypeReference<List<City>>() {});
 
             Users user = userRepository.findById(userId)
                     .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-            coords = new java.util.ArrayList<>(Collections.emptyList());
-            humans = new java.util.ArrayList<>(Collections.emptyList());
+            List<Coordinates> coords = new java.util.ArrayList<>(Collections.emptyList());
+            List<Human> humans = new java.util.ArrayList<>(Collections.emptyList());
 
             // Проверка данных перед сохранением
             int index = 0;
@@ -175,19 +159,12 @@ public class CityService {
             humanRepository.saveAll(humans);
             cityRepository.saveAll(cities);
 
-            _saveImportHistory(userId, "SUCCESS", cities.size());
+            return cities.size();
+            //_saveImportHistory(userId, "SUCCESS", cities.size());
         } catch (Exception e) {
             //e.printStackTrace();
             throw new RuntimeException("Error during import: " + e.getMessage(), e);
         }
-    }
-
-    public void _saveImportHistory(Long userId, String status, int addedObjects) {
-        ImportHistoryDTO historyDTO = new ImportHistoryDTO();
-        historyDTO.setUserId(userId);
-        historyDTO.setStatus(status);
-        historyDTO.setAddedObjects(addedObjects);
-        importHistoryService.saveImportHistory(historyDTO);
     }
 
     private void validateCity(City city) throws Exception {

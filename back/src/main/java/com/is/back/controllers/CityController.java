@@ -2,6 +2,8 @@ package com.is.back.controllers;
 
 import com.is.back.dto.*;
 import com.is.back.services.CityService;
+import com.is.back.services.ImportHistoryService;
+import com.is.back.services.ImportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,6 +21,8 @@ import java.util.List;
 @RequestMapping("/cities")
 public class CityController {
     private final CityService cityService;
+    private final ImportService importService;
+    private final ImportHistoryService importHistoryService;
 
     private final WebSocketController webSocketController;
     /**
@@ -99,13 +103,14 @@ public class CityController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("userId") Long userId ) {
         try {
-            cityService.importCitiesFromJson(file, userId);
+            importService.importCities(file, userId);
 
             webSocketController.sendCitiesUpdate();
 
             return ResponseEntity.ok(new MessageDTO("Cities imported correctly"));
         } catch (Exception e) {
-            cityService._saveImportHistory(userId, "FAIL", 0);
+            importHistoryService._saveImportHistory(userId, "", "FAIL", 0);
+            //cityService._saveImportHistory(userId, "FAIL", 0);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageDTO(e.getMessage()));
         }
     }

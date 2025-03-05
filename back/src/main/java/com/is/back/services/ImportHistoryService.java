@@ -22,10 +22,20 @@ public class ImportHistoryService {
 
         history.setUserId(importHistoryDTO.getUserId());
         history.setTimestamp(LocalDateTime.now());
+        history.setFileName(importHistoryDTO.getFileName());
         history.setStatus(importHistoryDTO.getStatus());
         history.setAddedObjects(importHistoryDTO.getAddedObjects());
 
         importHistoryRepository.save(history);
+    }
+
+    public void _saveImportHistory(Long userId, String fileName, String status, int addedObjects) {
+        ImportHistoryDTO historyDTO = new ImportHistoryDTO();
+        historyDTO.setUserId(userId);
+        historyDTO.setFileName(fileName);
+        historyDTO.setStatus(status);
+        historyDTO.setAddedObjects(addedObjects);
+        saveImportHistory(historyDTO);
     }
 
     // Получить историю для пользователя
@@ -46,6 +56,7 @@ public class ImportHistoryService {
         return new ImportHistoryDTO(
                 importHistory.getUserId(),
                 importHistory.getTimestamp(),
+                importHistory.getFileName(),
                 importHistory.getStatus(),
                 importHistory.getAddedObjects());
     }

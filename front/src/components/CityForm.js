@@ -56,10 +56,17 @@ const CityForm = () => {
     // Обновление состояния города при изменении chosenCity
     useEffect(() => {
         if (Object.entries(chosenCity).length !== 0 && chosenCity.name !== '') {
-            setCity(chosenCity);
+            setCity({
+                ...chosenCity,
+                establishmentDate : chosenCity.establishmentDate.substring(0, 10),
+            });
+           /* city = {
+                ...chosenCity,
+                establishmentDate : chosenCity.establishmentDate.substring(0, 10),
+            };*/
+            console.log(city.establishmentDate);
+            console.log(city.name);
             console.log(user.userId);
-            console.log(chosenCity.userId);
-            console.log(chosenCity.userId === user.userId);
 
             if (chosenCity.userId === user.userId || user.adminRole === 'ADMIN') {
                 setIsEditable(true);
