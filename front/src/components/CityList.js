@@ -45,7 +45,7 @@ const CityList = () => {
         const socket = new SockJS(API_URL + 'ws');
         const stompClient = new Client({
             webSocketFactory: () => socket,
-            reconnectDelay: 5000,
+            reconnectDelay: 30 * 1000,
             debug: (str) => {
                 console.log(str);
             },

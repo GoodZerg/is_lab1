@@ -19,6 +19,7 @@ import com.fasterxml.jackson.datatype.jsr310.*;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -118,10 +119,30 @@ public class CityService {
     // Удалить город
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public void deleteCity(Long id) {
-        if (!cityRepository.existsById(id)) {
-            throw new NotFoundException("City not found with id: " + id);
+        City existingCity = cityRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("City not found with id: " + id));
+
+        List<City> citiesToDelete = new ArrayList<>();
+        citiesToDelete.add(existingCity);
+
+        Long coordId = existingCity.getCoordinates().getId();
+        Long govrId = existingCity.getGovernor().getId();
+
+        List<City> allCities = cityRepository.findAll();
+
+        for (City city : allCities) {
+            if (city.getCoordinates().getId().equals(coordId) || city.getGovernor().getId().equals(govrId)) {
+                citiesToDelete.add(city);
+            }
         }
-        cityRepository.deleteById(id);
+
+        /*if (!cityRepository.existsById(id)) {
+            throw new NotFoundException("City not found with id: " + id);
+        }*/
+        //cityRepository.deleteById(id);
+        cityRepository.deleteAll(citiesToDelete);
+        coordinatesRepository.deleteById(coordId);
+        humanRepository.deleteById(govrId);
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
