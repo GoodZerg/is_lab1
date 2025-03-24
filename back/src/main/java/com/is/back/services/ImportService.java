@@ -31,8 +31,12 @@ public class ImportService {
             importHistoryService._saveImportHistory(userId, objectName, "SUCCESS", num);
         } catch (Exception e) {
             // Откат
-
-            minioService.deleteFile(objectName);
+            try {
+                minioService.deleteFile(objectName);
+            } catch (Exception e1) {
+                e1.printStackTrace();
+                throw e;
+            }
             throw e;
         }
     }

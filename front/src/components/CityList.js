@@ -25,7 +25,7 @@ const CityList = () => {
 
     // Состояние для сортировки
     const [sortConfig, setSortConfig] = useState({
-        key: null, // Ключ сортировки (например, 'name', 'coordinates.id')
+        key: 'name', // Ключ сортировки (например, 'name', 'coordinates.id')
         direction: 'ascending', // Направление сортировки
     });
 
@@ -45,7 +45,7 @@ const CityList = () => {
         const socket = new SockJS(API_URL + 'ws');
         const stompClient = new Client({
             webSocketFactory: () => socket,
-            reconnectDelay: 30 * 1000,
+            reconnectDelay: 5000,
             debug: (str) => {
                 console.log(str);
             },
@@ -94,23 +94,22 @@ const CityList = () => {
         }
     };
 
-    // Логика для фильтрации
+    // Логика для фильтрации по столбцу, выбранному для сортировки
     const filteredCities = cities.cities.filter(city => {
         const filterLower = filter.toLowerCase();
-        return (
-            (city.name?.toLowerCase() || '').includes(filterLower) || // Фильтрация по имени
-            (city.coordinates.id?.toString() || '').includes(filterLower) || // Фильтрация по coordinates.id
-            (city.area?.toString() || '').includes(filterLower) || // Фильтрация по area
-            (city.population?.toString() || '').includes(filterLower) || // Фильтрация по population
-            (city.establishmentDate?.toLowerCase() || '').includes(filterLower) || // Фильтрация по establishmentDate
-            (city.capital ? 'yes' : 'no').includes(filterLower) || // Фильтрация по capital
-            (city.metersAboveSeaLevel?.toString() || '').includes(filterLower) || // Фильтрация по metersAboveSeaLevel
-            (city.climate?.toLowerCase() || '').includes(filterLower) || // Фильтрация по climate
-            (city.government?.toLowerCase() || '').includes(filterLower) || // Фильтрация по government
-            (city.standardOfLiving?.toLowerCase() || '').includes(filterLower) || // Фильтрация по standardOfLiving
-            (city.governor.id?.toString() || '').includes(filterLower) || // Фильтрация по governor.id
-            (city.userId?.toString() || '').includes(filterLower) // Фильтрация по userId
-        );
+        let cityValue;
+
+        // Для вложенных объектов (coordinates и governor)
+        if (sortConfig.key.includes('.')) {
+            const [parent, child] = sortConfig.key.split('.');
+            cityValue = city[parent]?.[child] || ''; // Используем значение по умолчанию
+        } else {
+            cityValue = city[sortConfig.key] || ''; // Используем значение по умолчанию
+        }
+
+        // Приведение значения к строке для сравнения
+        const cityValueStr = cityValue.toString().toLowerCase();
+        return cityValueStr.includes(filterLower);
     });
 
     // Логика для сортировки
@@ -183,7 +182,7 @@ const CityList = () => {
                 <input
                     type="text"
                     className="form-control"
-                    placeholder="Filter by any column..."
+                    placeholder={`Filter by ${sortConfig.key}...`}
                     value={filter}
                     onChange={handleFilterChange}
                 />

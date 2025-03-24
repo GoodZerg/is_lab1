@@ -124,10 +124,14 @@ public class CityController {
      */
     @PostMapping("/delete")
     public ResponseEntity<MessageDTO> deleteCity(@RequestBody MessageDTO dto) {
-        cityService.deleteCity(Long.valueOf(dto.getMessage()));
+        try {
+            cityService.deleteCity(Long.valueOf(dto.getMessage()));
 
-        webSocketController.sendCitiesUpdate();
+            webSocketController.sendCitiesUpdate();
 
-        return ResponseEntity.ok(new MessageDTO("City deleted successfully"));
+            return ResponseEntity.ok(new MessageDTO("City deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageDTO(e.getMessage()));
+        }
     }
 }
